@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Torrent Downloader</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .progress { height: 20px; background: #eee; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #4CAF50; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Torrent Downloader</h1>
+        <form id="downloadForm">
+            <input type="text" name="magnet" placeholder="Magnet Link" style="width: 80%">
+            <button type="submit">Start Download</button>
+        </form>
+        
+        <div id="downloads"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('downloadForm');
+        const downloadsDiv = document.getElementById('downloads');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            
+            try {
+                const response = await axios.post('/download', formData);
+                startProgressPolling(response.data.id);
+            } catch (error) {
+                alert('Error starting download: ' + error.response.data.error);
+            }
+        });
+
+        function startProgressPolling(infoHash) {
+            const container = document.createElement('div');
+            container.id = infoHash;
+            container.innerHTML = `
+                <h3>Downloading...</h3>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 0%"></div>
+                </div>
+                <p>Speed: <span class="speed">0</span> B/s</p>
+                <p>Status: <span class="status">Initializing</span></p>
+                <div class="files"></div>
+                <button onclick="stopDownload('${infoHash}')">Stop</button>
+            `;
+            downloadsDiv.appendChild(container);
+
+            const interval = setInterval(async () => {
+                try {
+                    const response = await axios.get(`/progress/${infoHash}`);
+                    const data = response.data;
+                    
+                    container.querySelector('.progress-bar').style.width = data.progress + '%';
+                    container.querySelector('.speed').textContent = 
+                        (data.speed / 1024).toFixed(1) + ' KB/s';
+                    container.querySelector('.status').textContent = data.status;
+
+                    if (data.status === 'Completed') {
+                        clearInterval(interval);
+                        const filesHtml = data.files.map(file => 
+                            `<a href="/downloads/${file.path}" download>${file.path}</a>`
+                        ).join('<br>');
+                        container.querySelector('.files').innerHTML = filesHtml;
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    container.innerHTML = 'Download removed or error occurred';
+                }
+            }, 1000);
+        }
+
+        function stopDownload(infoHash) {
+            axios.get(`/stop/${infoHash}`);
+        }
+    </script>
+</body>
+</html>
