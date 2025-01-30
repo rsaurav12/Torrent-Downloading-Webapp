@@ -30,7 +30,6 @@ class TorrentDownloader(threading.Thread):
         params = {
             'save_path': app.config['DOWNLOAD_FOLDER'],
             'storage_mode': lt.storage_mode_t(2),
-            'paused': False,
             'auto_managed': True,
         }
 
