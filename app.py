@@ -148,7 +148,7 @@ def download_files(session_id, selected_indices):
         save_session(session_id, session)
         # Update progress in a loop
         
-        while handle.status().state != 'seeding' or handle.status().state != 'finished':
+        while handle.status().state != 'seeding' and handle.status().state != 'finished':
             status = handle.status()
             session = load_session(session_id) or {}
             session.update({
@@ -157,14 +157,16 @@ def download_files(session_id, selected_indices):
                 'downloaded': status.total_done,
                 'status': f"{status.state} - {str(status.progress * 100)}%"
             })
-
+            
             save_session(session_id, session)
             time.sleep(1)
+            
+        session = load_session(session_id) or {}
         session.update({
             'progress': 100,
             'status': "Downloaded. Zipping your files."
         })
-
+         
         save_session(session_id, session)
         zip_filename = os.path.join('zips', f'{session_id}.zip')
         threading.Thread(target=zip_directory, args=(session_id, session['save_path'], zip_filename)).start()
