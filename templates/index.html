@@ -67,6 +67,7 @@
                 alert("Error submitting form: " + err.message);
             }
         }
+
         async function checkStatus() {
             const response = await fetch(`/status/${session_id}`);
             const data = await response.json();
@@ -83,6 +84,7 @@
                 setTimeout(checkStatus, 1000);
             }
         }
+
         function populateFileList(files) {
             const fileListDiv = document.getElementById('fileList');
             fileListDiv.innerHTML = '';
@@ -97,10 +99,12 @@
                 fileListDiv.appendChild(div);
             });
         }
+
         document.getElementById('selectAll').addEventListener('change', function(e) {
             const checkboxes = document.querySelectorAll('input[name="files"]');
             checkboxes.forEach(checkbox => checkbox.checked = e.target.checked);
         });
+
         async function startDownload() {
             const formData = new FormData(document.getElementById('filesForm'));
             const response = await fetch('/start-download', { method: 'POST', body: formData });
