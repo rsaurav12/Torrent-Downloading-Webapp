@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Progress</title>
+    <style>
+        .progress-bar { width: 100%; height: 20px; background: #eee; }
+        .progress { height: 100%; background: #4CAF50; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <h1>Download Progress</h1>
+    <div class="progress-bar">
+        <div class="progress" style="width: 0%"></div>
+    </div>
+    <div id="status"></div>
+    <div id="downloadLink" style="display: none;">
+        <a id="zipLink" href="#">Download ZIP</a>
+    </div>
+
+    <script>
+        const session_id = '{{ session_id }}';
+        function updateProgress() {
+            fetch(`/status/${session_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelector('.progress').style.width = `${data.progress}%`;
+                    document.getElementById('status').innerHTML = `
+                        ${data.status}<br>
+                        Speed: ${data.download_speed}<br>
+                        Downloaded: ${data.downloaded} of ${data.total_size}
+                    `;
+                    if (data.zip_ready) {
+                        document.getElementById('downloadLink').style.display = 'block';
+                        document.getElementById('zipLink').href = `/download/${session_id}`;
+                    } else if (!data.status.startsWith('Error')) {
+                        setTimeout(updateProgress, 1000);
+                    }
+                });
+        }
+        updateProgress();
+    </script>
+</body>
+</html>
