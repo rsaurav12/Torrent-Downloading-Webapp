@@ -146,7 +146,11 @@ def download_files(session_id, selected_indices):
         session['downloaded'] = 0
         session['selected_size'] = sum(files.file_size(i) for i in selected_indices)
         save_session(session_id, session)
-        # Update progress in a loop
+    
+                if status.progress >= 1.0 and status.state == lt.torrent_status.finished:
+                    break  # Explicitly exit if all pieces are downloaded
+    
+                time.sleep(1)
         
         while handle.status().state != 'seeding' and handle.status().state != 'finished' and handle.status().progress<1:
             status = handle.status()
@@ -160,7 +164,8 @@ def download_files(session_id, selected_indices):
             
             save_session(session_id, session)
             time.sleep(1)
-            
+        handle.flush_cache()
+        handle.pause()
         session = load_session(session_id) or {}
         session.update({
             'progress': 100,
