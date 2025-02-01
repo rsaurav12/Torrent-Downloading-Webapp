@@ -2,81 +2,111 @@
 <html>
 <head>
     <title>Torrent Downloader</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .progress { height: 20px; background: #eee; margin: 10px 0; }
-        .progress-bar { height: 100%; background: #4CAF50; transition: width 0.3s; }
+        body { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .form-group { margin: 10px 0; }
+        input[type="text"] { width: 100%; padding: 8px; }
+        .hidden { display: none; }
+        .file-list { max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Initial Form Section -->
+    <div id="initial-form">
         <h1>Torrent Downloader</h1>
-        <form id="downloadForm">
-            <input type="text" name="magnet" placeholder="Magnet Link" style="width: 80%">
-            <button type="submit">Start Download</button>
+        <form id="mainForm">
+            <div class="form-group">
+                <label>Magnet Link:</label>
+                <input type="text" name="magnet" required>
+            </div>
+            <div class="form-group">
+                <label>Folder Name:</label>
+                <input type="text" name="folder" required>
+            </div>
+            <button type="button" onclick="startProcess()">Start</button>
         </form>
-        
-        <div id="downloads"></div>
+    </div>
+
+    <!-- Loading Metadata Section -->
+    <div id="loading-section" class="hidden">
+        <h1>Fetching Metadata...</h1>
+        <div id="loadingStatus">Initializing...</div>
+    </div>
+
+    <!-- File Selection Section -->
+    <div id="file-selection-section" class="hidden">
+        <h1>Select Files to Download</h1>
+        <form id="filesForm">
+            <input type="hidden" name="session_id" id="session_id_field">
+            <label>
+                <input type="checkbox" id="selectAll"> Select All
+            </label>
+            <div id="fileList" class="file-list"></div>
+        </form>
+        <button onclick="startDownload()">Start Download</button>
     </div>
 
     <script>
-        const form = document.getElementById('downloadForm');
-        const downloadsDiv = document.getElementById('downloads');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
-            
+        let session_id = null;
+    
+        async function startProcess() {
+            const formData = new FormData(document.getElementById('mainForm'));
             try {
-                const response = await axios.post('/download', formData);
-                startProgressPolling(response.data.id);
-            } catch (error) {
-                alert('Error starting download: ' + error.response.data.error);
-            }
-        });
-
-        function startProgressPolling(infoHash) {
-            const container = document.createElement('div');
-            container.id = infoHash;
-            container.innerHTML = `
-                <h3>Downloading...</h3>
-                <div class="progress">
-                    <div class="progress-bar" style="width: 0%"></div>
-                </div>
-                <p>Speed: <span class="speed">0</span> B/s</p>
-                <p>Status: <span class="status">Initializing</span></p>
-                <div class="files"></div>
-                <button onclick="stopDownload('${infoHash}')">Stop</button>
-            `;
-            downloadsDiv.appendChild(container);
-
-            const interval = setInterval(async () => {
-                try {
-                    const response = await axios.get(`/progress/${infoHash}`);
-                    const data = response.data;
-                    
-                    container.querySelector('.progress-bar').style.width = data.progress + '%';
-                    container.querySelector('.speed').textContent = 
-                        (data.speed / 1024).toFixed(1) + ' KB/s';
-                    container.querySelector('.status').textContent = data.status;
-
-                    if (data.status === 'Completed') {
-                        clearInterval(interval);
-                        const filesHtml = data.files.map(file => 
-                            `<a href="/downloads/${file.path}" download>${file.path}</a>`
-                        ).join('<br>');
-                        container.querySelector('.files').innerHTML = filesHtml;
-                    }
-                } catch (error) {
-                    clearInterval(interval);
-                    container.innerHTML = 'Download removed or error occurred';
+                const response = await fetch('/submit', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
-            }, 1000);
+                const data = await response.json();
+                session_id = data.session_id;
+                document.getElementById('session_id_field').value = session_id;
+                document.getElementById('initial-form').classList.add('hidden');
+                document.getElementById('loading-section').classList.remove('hidden');
+                checkStatus();
+            } catch (err) {
+                console.error("Error in startProcess:", err);
+                alert("Error submitting form: " + err.message);
+            }
         }
-
-        function stopDownload(infoHash) {
-            axios.get(`/stop/${infoHash}`);
+        async function checkStatus() {
+            const response = await fetch(`/status/${session_id}`);
+            const data = await response.json();
+            document.getElementById('loadingStatus').textContent = data.status;
+            if (data.status === 'Metadata fetched') {
+                // Populate file selection list
+                populateFileList(data.files);
+                document.getElementById('loading-section').classList.add('hidden');
+                document.getElementById('file-selection-section').classList.remove('hidden');
+            } else if (data.status.startsWith('Error')) {
+                alert(data.status);
+                window.location.reload();
+            } else {
+                setTimeout(checkStatus, 1000);
+            }
+        }
+        function populateFileList(files) {
+            const fileListDiv = document.getElementById('fileList');
+            fileListDiv.innerHTML = '';
+            files.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+                    <label>
+                        <input type="checkbox" name="files" value="${file.index}"> ${file.path} (${file.size_str})
+                    </label>
+                `;
+                fileListDiv.appendChild(div);
+            });
+        }
+        document.getElementById('selectAll').addEventListener('change', function(e) {
+            const checkboxes = document.querySelectorAll('input[name="files"]');
+            checkboxes.forEach(checkbox => checkbox.checked = e.target.checked);
+        });
+        async function startDownload() {
+            const formData = new FormData(document.getElementById('filesForm'));
+            const response = await fetch('/start-download', { method: 'POST', body: formData });
+            const data = await response.json();
+            // Redirect to the progress page once download starts
+            window.location = `/progress/${data.session_id}`;
         }
     </script>
 </body>
