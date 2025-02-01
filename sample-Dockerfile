@@ -1,0 +1,26 @@
+# Use Python 3.9 as the base image
+FROM python:3.9
+
+# Create a user named 'user' with UID 1000 and create its home directory
+RUN useradd -m -u 1000 user
+
+# Switch to the 'user' user for subsequent commands
+USER user
+
+# Add user's local bin directory to the PATH environment variable
+ENV PATH="/home/user/.local/bin:$PATH"
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Clone the repo to current directory
+RUN git clone https://github.com/nishantprime/Torrent-Downloading-Webapp.git .
+
+# Install Python dependencies listed in requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
+# Copy the rest of the application code from the host to the container
+COPY --chown=user . /app
+
+# Specify the command to run the application with Gunicorn
+CMD ["gunicorn", "app:app", "-b", "0.0.0.0:7860", "-w", "3", "--worker-class", "gthread", "--threads", "4", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", "--capture-output"]
