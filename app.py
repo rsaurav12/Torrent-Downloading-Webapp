@@ -171,7 +171,8 @@ def download_files(session_id, selected_indices):
         })
          
         save_session(session_id, session)
-        zip_filename = os.path.join('zips', f'{session['folder_name']}.zip')
+        folder_name = session['folder_name']
+        zip_filename = os.path.join('zips', f'{folder_name}.zip')
         threading.Thread(target=zip_directory, args=(session_id, session['save_path'], zip_filename)).start()
         app.logger.info(f"Download complete for session {session_id}. Zipping initiated.")
     except Exception as e:
