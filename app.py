@@ -43,7 +43,7 @@ def convert_bytes(size):
         size /= 1024
     return f"{size:.2f} PB"
 
-def clean_ghost_files(directory):
+def clean_directory(directory):
     if os.path.exists(directory):
         shutil.rmtree(directory)
     os.makedirs(directory)
@@ -136,7 +136,7 @@ def download_files(session_id, selected_indices):
             time.sleep(1)
         files = handle.get_torrent_info().files()
         os.makedirs(session['save_path'], exist_ok=True)
-        clean_ghost_files(session['save_path'])
+        clean_directory(session['save_path'])
         priorities = [1 if i in selected_indices else 0 for i in range(files.num_files())]
         handle.prioritize_files(priorities)
         handle.resume()
@@ -191,6 +191,7 @@ def submit():
     app.logger.info(f"Received submit: magnet={magnet_link}, folder={folder_name}")
     session_id = os.urandom(16).hex()
     save_path = os.path.join('downloads', folder_name)
+    clean_directory('zips')
     os.makedirs(save_path, exist_ok=True)
     session_data = {
         'status': 'Initializing...',
