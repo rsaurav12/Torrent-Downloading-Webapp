@@ -248,7 +248,8 @@ def download_zip(session_id):
     session = load_session(session_id)
     if not session or 'zip_path' not in session:
         return "File not ready", 404
-    return send_from_directory('zips', f'{session_id}.zip', as_attachment=True)
+    folder_name = session['folder_name']
+    return send_from_directory('zips', f'{folder_name}.zip', as_attachment=True)
 
 if __name__ == '__main__':
     os.makedirs('downloads', exist_ok=True)
