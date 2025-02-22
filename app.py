@@ -171,7 +171,7 @@ def download_files(session_id, selected_indices):
         })
          
         save_session(session_id, session)
-        zip_filename = os.path.join('zips', f'{session_id}.zip')
+        zip_filename = os.path.join('zips', f'{session['folder_name']}.zip')
         threading.Thread(target=zip_directory, args=(session_id, session['save_path'], zip_filename)).start()
         app.logger.info(f"Download complete for session {session_id}. Zipping initiated.")
     except Exception as e:
@@ -188,6 +188,9 @@ def index():
 def submit():
     magnet_link = request.form['magnet']
     folder_name = request.form['folder']
+    if not folder_name:
+        folder_name = 'Temp'
+    folder_name = folder_name.replace(' ','_')
     app.logger.info(f"Received submit: magnet={magnet_link}, folder={folder_name}")
     session_id = os.urandom(16).hex()
     save_path = os.path.join('downloads', folder_name)
@@ -197,6 +200,7 @@ def submit():
     session_data = {
         'status': 'Initializing...',
         'save_path': save_path,
+        'folder_name': folder_name,
         'magnet': magnet_link
     }
     save_session(session_id, session_data)
