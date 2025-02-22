@@ -192,6 +192,7 @@ def submit():
     session_id = os.urandom(16).hex()
     save_path = os.path.join('downloads', folder_name)
     clean_directory('zips')
+    clean_directory('downloads')
     os.makedirs(save_path, exist_ok=True)
     session_data = {
         'status': 'Initializing...',
