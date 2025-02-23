@@ -266,7 +266,7 @@ def get_status(session_id):
 @app.route('/download/<session_id>')
 def download_zip(session_id):
     session = load_session(session_id)
-    if not session or 'zip_path' not in session:
+    if not session or 'link' not in session:
         return "File not ready", 404
     folder_name = session['folder_name']
     return send_from_directory('zips', f'{folder_name}.zip', as_attachment=True)
