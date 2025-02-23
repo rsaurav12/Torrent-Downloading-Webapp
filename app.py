@@ -8,6 +8,7 @@ import zipfile
 import json
 from flask import Flask, request, render_template, jsonify, send_from_directory
 from logging.handlers import RotatingFileHandler
+import subprocess
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -47,6 +48,25 @@ def clean_directory(directory):
     if os.path.exists(directory):
         shutil.rmtree(directory)
     os.makedirs(directory)
+
+def upload(filename, fullpath):
+    url = "https://w.buzzheavier.com/" + filename
+    try:
+        process = subprocess.run(
+            ['curl', '-#o', '-', '-T', fullpath, url],  # Use the variable here
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        out = json.loads(process.stdout)
+        if out['code'] == 201:
+            link = 'https://buzzheavier.com/' + out['data']['id']
+            return 1, link
+        else:
+            return 0, f'error occured, status - {out}'
+    except Exception as e: # Catch other potential exceptions
+        return 0, f"An unexpected error occurred: {e}"
+
 def zip_directory(session_id, source_dir, output_filename):
     try:
         # Ensure that the destination directory for the zip exists
