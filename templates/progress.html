@@ -29,7 +29,7 @@
                         Speed: ${data.download_speed}<br>
                         Downloaded: ${data.downloaded} of ${data.total_size}
                     `;
-                    if (data.zip_ready) {
+                    if (data.uploaded) {
                         document.getElementById('downloadLink').style.display = 'block';
                         document.getElementById('zipLink').href = `/download/${session_id}`;
                     } else if (!data.status.startsWith('Error')) {
