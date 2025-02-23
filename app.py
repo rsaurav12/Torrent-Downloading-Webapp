@@ -6,7 +6,7 @@ import logging
 import threading
 import zipfile
 import json
-from flask import Flask, request, render_template, jsonify, send_from_directory
+from flask import Flask, request, render_template, jsonify, redirect
 from logging.handlers import RotatingFileHandler
 import subprocess
 
