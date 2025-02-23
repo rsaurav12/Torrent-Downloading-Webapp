@@ -88,12 +88,28 @@ def zip_directory(session_id, source_dir, output_filename):
         # Update the session to indicate completion
         session = load_session(session_id) or {}
         session['zip_path'] = output_filename
-        session['status'] = 'Completed'
+        session['status'] = 'Completed zipping, Uploading your file to server for fast download.'
         save_session(session_id, session)
-        
+       
         # Remove the source directory (if desired)
         shutil.rmtree(source_dir)
+
         app.logger.info(f"Zipping complete for session {session_id}")
+
+        folder_name = session['folder_name']
+        zip_name = f'{folder_name}.zip'
+        success, msg = upload(zip_name, output_filename)
+
+        session = load_session(session_id) or {}
+        session['link'] = msg
+        if success:
+            session['success'] = True
+        else:
+            session['success'] = False
+        session['status'] = 'Completed upload.'
+        
+        save_session(session_id, session)
+        
     except Exception as e:
         app.logger.error(f"Error zipping files for session {session_id}: {str(e)}")
         session = load_session(session_id) or {}
@@ -269,7 +285,10 @@ def download_zip(session_id):
     if not session or 'link' not in session:
         return "File not ready", 404
     link = session['link']
-    return redirect(link)
+    if session['success']:
+        return redirect(link)
+    else:
+        return link
 
 if __name__ == '__main__':
     os.makedirs('downloads', exist_ok=True)
