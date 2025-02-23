@@ -92,7 +92,8 @@ def zip_directory(session_id, source_dir, output_filename):
         save_session(session_id, session)
        
         # Remove the source directory (if desired)
-        shutil.rmtree(source_dir)
+        
+        clean_directory('downloads')
 
         app.logger.info(f"Zipping complete for session {session_id}")
 
@@ -106,6 +107,7 @@ def zip_directory(session_id, source_dir, output_filename):
             session['success'] = True
         else:
             session['success'] = False
+        clean_directory('zips')
         session['status'] = 'Completed upload.'
         
         save_session(session_id, session)
