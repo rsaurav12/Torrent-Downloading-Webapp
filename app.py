@@ -259,7 +259,7 @@ def get_status(session_id):
         'download_speed': f"{convert_bytes(session.get('download_speed', 0))}/s",
         'downloaded': convert_bytes(session.get('downloaded', 0)),
         'total_size': convert_bytes(session.get('selected_size', 0)),
-        'zip_ready': 'zip_path' in session,
+        'uploaded': 'link' in session,
         'files': session.get('files', [])
     })
 
