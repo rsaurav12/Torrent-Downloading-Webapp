@@ -20,6 +20,8 @@ handler.setLevel(logging.DEBUG)
 app.logger.addHandler(handler)
 logging.basicConfig(level=logging.DEBUG)
 
+download_history = []
+
 # Directory for JSON session storage
 SESSION_DIR = 'session_store'
 if not os.path.exists(SESSION_DIR):
@@ -105,6 +107,8 @@ def zip_directory(session_id, source_dir, output_filename):
         session['link'] = msg
         if success:
             session['success'] = True
+            global download_history
+            download_history.append(msg)
         else:
             session['success'] = False
         clean_directory('zips')
@@ -221,7 +225,7 @@ def download_files(session_id, selected_indices):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html',download_history=download_history)
 
 @app.route('/submit', methods=['POST'])
 def submit():
