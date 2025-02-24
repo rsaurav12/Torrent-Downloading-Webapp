@@ -25,6 +25,16 @@
             </div>
             <button type="button" onclick="startProcess()">Start</button>
         </form>
+
+        <!-- Recent Downloads Section -->
+        <div id="recent-downloads">
+            <h2>Recently Completed Downloads</h2>
+            <ul id="download-list">
+                {% for link in download_history %}
+                <li><a href="{{ link }}" target="_blank">{{ link }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 
     <!-- Loading Metadata Section -->
