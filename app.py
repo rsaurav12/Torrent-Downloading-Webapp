@@ -225,6 +225,7 @@ def download_files(session_id, selected_indices):
 
 @app.route('/')
 def index():
+    global download_history
     return render_template('index.html',download_history=download_history)
 
 @app.route('/submit', methods=['POST'])
