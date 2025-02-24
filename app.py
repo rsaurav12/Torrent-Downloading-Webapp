@@ -235,34 +235,35 @@ def download_files(session_id, selected_indices):
 @app.route('/')
 def index():
     global download_history
-    return render_template('index.html',download_history=download_history)
+    global downloading
+    if not downloading:
+        return render_template('index.html',download_history=download_history)
+    else:
+        return render_template('index2.html',download_history=download_history)
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    if not downloading:
-        magnet_link = request.form['magnet']
-        folder_name = request.form['folder']
-        if not folder_name:
-            folder_name = 'Temp'
-        folder_name = folder_name.replace(' ','_')
-        app.logger.info(f"Received submit: magnet={magnet_link}, folder={folder_name}")
-        session_id = os.urandom(16).hex()
-        save_path = os.path.join('downloads', folder_name)
-        clean_directory('SESSION_DIR')
-        clean_directory('zips')
-        clean_directory('downloads')
-        os.makedirs(save_path, exist_ok=True)
-        session_data = {
-            'status': 'Initializing...',
-            'save_path': save_path,
-            'folder_name': folder_name,
-            'magnet': magnet_link
-        }
-        save_session(session_id, session_data)
-        threading.Thread(target=fetch_metadata, args=(session_id, magnet_link, save_path)).start()
-        return jsonify({'session_id': session_id})
-    else:
-        return 'One download already in progress'
+    magnet_link = request.form['magnet']
+    folder_name = request.form['folder']
+    if not folder_name:
+        folder_name = 'Temp'
+    folder_name = folder_name.replace(' ','_')
+    app.logger.info(f"Received submit: magnet={magnet_link}, folder={folder_name}")
+    session_id = os.urandom(16).hex()
+    save_path = os.path.join('downloads', folder_name)
+    clean_directory('SESSION_DIR')
+    clean_directory('zips')
+    clean_directory('downloads')
+    os.makedirs(save_path, exist_ok=True)
+    session_data = {
+        'status': 'Initializing...',
+        'save_path': save_path,
+        'folder_name': folder_name,
+        'magnet': magnet_link
+    }
+    save_session(session_id, session_data)
+    threading.Thread(target=fetch_metadata, args=(session_id, magnet_link, save_path)).start()
+    return jsonify({'session_id': session_id})
 
 @app.route('/start-download', methods=['POST'])
 def start_download():
