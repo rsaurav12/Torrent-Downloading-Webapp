@@ -71,6 +71,7 @@ def upload(filename, fullpath):
         return 0, f"An unexpected error occurred: {e}"
 
 def zip_directory(session_id, source_dir, output_filename):
+    global downloading
     try:
         # Ensure that the destination directory for the zip exists
         dest_dir = os.path.dirname(output_filename)
@@ -114,13 +115,13 @@ def zip_directory(session_id, source_dir, output_filename):
             session['success'] = False
         clean_directory('zips')
         session['status'] = 'Completed upload.'
-        global downloading
+        
         downloading = False
         
         save_session(session_id, session)
         
     except Exception as e:
-        global downloading
+
         downloading = False
         app.logger.error(f"Error zipping files for session {session_id}: {str(e)}")
         session = load_session(session_id) or {}
@@ -167,8 +168,8 @@ def fetch_metadata(session_id, magnet_link, save_path):
         save_session(session_id, session)
 
 def download_files(session_id, selected_indices):
+    global downloading
     try:
-        global downloading
         downloading = True
         app.logger.debug(f"Starting download for session {session_id} with file indices: {selected_indices}")
         session = load_session(session_id)
@@ -225,7 +226,6 @@ def download_files(session_id, selected_indices):
         threading.Thread(target=zip_directory, args=(session_id, session['save_path'], zip_filename)).start()
         app.logger.info(f"Download complete for session {session_id}. Zipping initiated.")
     except Exception as e:
-        global downloading
         downloading = False
         app.logger.error(f"Download error for session {session_id}: {str(e)}")
         session = load_session(session_id) or {}
