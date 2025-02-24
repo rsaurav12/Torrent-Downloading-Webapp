@@ -21,6 +21,7 @@ app.logger.addHandler(handler)
 logging.basicConfig(level=logging.DEBUG)
 
 download_history = []
+downloading = False
 
 # Directory for JSON session storage
 SESSION_DIR = 'session_store'
@@ -113,10 +114,14 @@ def zip_directory(session_id, source_dir, output_filename):
             session['success'] = False
         clean_directory('zips')
         session['status'] = 'Completed upload.'
+        global downloading
+        downloading = False
         
         save_session(session_id, session)
         
     except Exception as e:
+        global downloading
+        downloading = False
         app.logger.error(f"Error zipping files for session {session_id}: {str(e)}")
         session = load_session(session_id) or {}
         session['status'] = f'Error: {str(e)}'
@@ -163,6 +168,8 @@ def fetch_metadata(session_id, magnet_link, save_path):
 
 def download_files(session_id, selected_indices):
     try:
+        global downloading
+        downloading = True
         app.logger.debug(f"Starting download for session {session_id} with file indices: {selected_indices}")
         session = load_session(session_id)
         if session is None:
@@ -218,6 +225,8 @@ def download_files(session_id, selected_indices):
         threading.Thread(target=zip_directory, args=(session_id, session['save_path'], zip_filename)).start()
         app.logger.info(f"Download complete for session {session_id}. Zipping initiated.")
     except Exception as e:
+        global downloading
+        downloading = False
         app.logger.error(f"Download error for session {session_id}: {str(e)}")
         session = load_session(session_id) or {}
         session['status'] = f'Error: {str(e)}'
@@ -230,26 +239,30 @@ def index():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    magnet_link = request.form['magnet']
-    folder_name = request.form['folder']
-    if not folder_name:
-        folder_name = 'Temp'
-    folder_name = folder_name.replace(' ','_')
-    app.logger.info(f"Received submit: magnet={magnet_link}, folder={folder_name}")
-    session_id = os.urandom(16).hex()
-    save_path = os.path.join('downloads', folder_name)
-    clean_directory('zips')
-    clean_directory('downloads')
-    os.makedirs(save_path, exist_ok=True)
-    session_data = {
-        'status': 'Initializing...',
-        'save_path': save_path,
-        'folder_name': folder_name,
-        'magnet': magnet_link
-    }
-    save_session(session_id, session_data)
-    threading.Thread(target=fetch_metadata, args=(session_id, magnet_link, save_path)).start()
-    return jsonify({'session_id': session_id})
+    if not downloading:
+        magnet_link = request.form['magnet']
+        folder_name = request.form['folder']
+        if not folder_name:
+            folder_name = 'Temp'
+        folder_name = folder_name.replace(' ','_')
+        app.logger.info(f"Received submit: magnet={magnet_link}, folder={folder_name}")
+        session_id = os.urandom(16).hex()
+        save_path = os.path.join('downloads', folder_name)
+        clean_directory('SESSION_DIR')
+        clean_directory('zips')
+        clean_directory('downloads')
+        os.makedirs(save_path, exist_ok=True)
+        session_data = {
+            'status': 'Initializing...',
+            'save_path': save_path,
+            'folder_name': folder_name,
+            'magnet': magnet_link
+        }
+        save_session(session_id, session_data)
+        threading.Thread(target=fetch_metadata, args=(session_id, magnet_link, save_path)).start()
+        return jsonify({'session_id': session_id})
+    else:
+        return 'One download already in progress'
 
 @app.route('/start-download', methods=['POST'])
 def start_download():
