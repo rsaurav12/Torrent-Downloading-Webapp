@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Torrent Downloader</title>
+    <style>
+        body { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .form-group { margin: 10px 0; }
+        input[type="text"] { width: 100%; padding: 8px; }
+        .hidden { display: none; }
+        .file-list { max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <!-- Initial Form Section -->
+    <div id="initial-form">
+        <h1>Torrent Downloader</h1>
+        <!-- Recent Downloads Section -->
+        <h2>One Download already in progress<h2>
+        <div id="recent-downloads">
+            <h2>Recently Completed Downloads</h2>
+            <ul id="download-list">
+                {% for link in download_history %}
+                <li><a href="{{ link }}" target="_blank">{{ link }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
