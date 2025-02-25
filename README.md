@@ -5,3 +5,7 @@ A functioning online torrent downloading web application (flask) which uses libt
 - allows torrent's file selection
 - gives zip downloads
 - live progress bar
+- uploads files to buzzheavier
+
+TO DO-
+- fix bugs
