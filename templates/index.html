@@ -31,7 +31,11 @@
             <h2>Recently Completed Downloads</h2>
             <ul id="download-list">
                 {% for link in download_history %}
-                <li><a href="{{ link }}" target="_blank">{{ link }}</a></li>
+                <li>
+                    <strong>{{ item.name }}</strong><br>
+                    <small>{{ item.timestamp }}</small><br>
+                    <a href="{{ item.link }}" class="btn" download>Download</a>
+                </li>       
                 {% endfor %}
             </ul>
         </div>
